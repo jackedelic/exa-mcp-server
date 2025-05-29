@@ -1,39 +1,20 @@
-# Use the official Node.js 18 image as a parent image
-FROM node:18-alpine AS builder
+FROM debian:bullseye-slim
 
-# Set the working directory in the container to /app
-WORKDIR /app
+ENV DEBIAN_FRONTEND=noninteractive \
+    GLAMA_VERSION="0.2.0" \
+    PATH="/home/service-user/.local/bin:${PATH}"
 
-# Copy package.json and package-lock.json into the container
-COPY package.json package-lock.json ./
+RUN (groupadd -r service-user) && (useradd -u 1987 -r -m -g service-user service-user) && (mkdir -p /home/service-user/.local/bin /app) && (chown -R service-user:service-user /home/service-user /app) && (apt-get update) && (apt-get install -y --no-install-recommends build-essential curl wget software-properties-common libssl-dev zlib1g-dev git) && (rm -rf /var/lib/apt/lists/*) && (curl -fsSL https://deb.nodesource.com/setup_22.x | bash -) && (apt-get install -y nodejs) && (apt-get clean) && (npm install -g mcp-proxy@3.0.3) && (npm install -g pnpm@9.15.5) && (npm install -g bun@1.1.42) && (node --version) && (curl -LsSf https://astral.sh/uv/install.sh | UV_INSTALL_DIR="/usr/local/bin" sh) && (uv python install 3.13 --default --preview) && (ln -s $(uv python find) /usr/local/bin/python) && (python --version) && (apt-get clean) && (rm -rf /var/lib/apt/lists/*) && (rm -rf /tmp/*) && (rm -rf /var/tmp/*) && (su - service-user -c "uv python install 3.13 --default --preview && python --version")
 
-# Install dependencies
-RUN npm ci --ignore-scripts
-
-# Copy the rest of the application code into the container
-COPY src/ ./src/
-COPY tsconfig.json ./
-
-# Build the project
-RUN npm run build
-
-# Use a minimal node image as the base image for running
-FROM node:18-alpine AS runner
+USER service-user
 
 WORKDIR /app
 
-# Copy compiled code from the builder stage
-COPY --from=builder /app/build ./build
-COPY package.json package-lock.json ./
-
-# Install only production dependencies
-RUN npm ci --production --ignore-scripts
-
-# Set environment variable for the Exa API key
 ENV EXA_API_KEY=your-api-key-here
 
-# Expose the port the app runs on
-EXPOSE 3000
+RUN git clone https://github.com/jackedelic/exa-mcp-server . && git checkout main
 
-# Run the application
-ENTRYPOINT ["node", "build/index.js"]
+RUN npm run build
+
+
+CMD ["npm", "build/index.js"]
