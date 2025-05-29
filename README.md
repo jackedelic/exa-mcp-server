@@ -1,3 +1,7 @@
+<a href="https://glama.ai/mcp/servers/@jackedelic/exa-mcp-server">
+  <img width="380" height="200" src="https://glama.ai/mcp/servers/@jackedelic/exa-mcp-server/badge" />
+</a>
+
 # Exa MCP Server 🔍
 [![npm version](https://badge.fury.io/js/exa-mcp-server.svg)](https://www.npmjs.com/package/exa-mcp-server)
 [![smithery badge](https://smithery.ai/badge/exa)](https://smithery.ai/server/exa)
